@@ -1,6 +1,6 @@
 <script>
     import { initializeApp, getApps, getApp } from "firebase/app";
-    import { getFirestore, collection, onSnapshot } from "firebase/firestore";
+    import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, addDoc} from "firebase/firestore";
     import { firebaseConfig } from "$lib/firebaseConfig";
   
     let firebaseApp;
@@ -35,15 +35,17 @@
     let error = "";
   
     // Function to add a new task to the todos array
-    const addTask = () => {
+    const addTask = async () => {
       // Create a new todo object
-      let todo = {
-        task: task,
-        isComplete: false,
-        createdDate: new Date(),
-      };
       if (task.trim() !== "") {
-        todos = [todo, ...todos];
+        //todos = [todo, ...todos];
+
+        const docRef = await addDoc(collection(db, "todos"), {
+            task: task,
+            isComplete: false,
+            createdDate: new Date(),
+});
+
         error = "";
       } else {
         error = "Task is Empty";
@@ -53,17 +55,21 @@
     };
   
     // Function to toggle the completion status of a todo
-    const markTodoAsComplete = (index) => {
+    const markTodoAsComplete = async(todo) => {
       // Toggle the isComplete property of the todo at the specified index
-      todos[index].isComplete = !todos[index].isComplete;
-    };
+      //todos[index].isComplete = !todos[index].isComplete;
+        await updateDoc(doc(db, "todos", todo.id), {
+        isComplete: !todo.isComplete
+    });
+};
   
     // Function to delete a todo from the todos array
-    const deleteTodo = (index) => {
+    const deleteTodo = async (id) => {
       // Get the todo to be deleted
-      let deleteItem = todos[index];
+     // let deleteItem = todos[index];
       // Filter out the todo to be deleted from the todos array
-      todos = todos.filter((item) => item !== deleteItem);
+     //todos = todos.filter((item) => item !== deleteItem);
+     await deleteDoc(doc(db, "todos", id));
     };
   
     const keyIsPressed = (event) => {
@@ -73,21 +79,21 @@
     };
   </script>
   
-  
+
   <!-- Input field to add a new task -->
   <input type="text" placeholder="Add a task" bind:value={task} on:keypress={keyIsPressed} />
   <!-- Button to trigger the addTask function -->
   <button on:click={addTask}>Add Item</button>
   <!-- Display the list of todos -->
   <ol>
-    {#each todos as todo, index}
+    {#each todos as todo}
     <li class:complete={todo.isComplete}>
       <!-- Display the task text -->
       <span>{todo.task}</span>
       <!-- Buttons to mark the todo as complete or delete it -->
       <span>
-        <button on:click={() => markTodoAsComplete(index)}>✔</button>
-        <button on:click={() => deleteTodo(index)}>✘</button>
+        <button on:click={() => markTodoAsComplete(todo)}>✔</button>
+        <button on:click={() => deleteTodo(todo.id)}>✘</button>
       </span>
     </li>
     {:else}
