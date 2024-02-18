@@ -1,32 +1,52 @@
 <script>
-    let todos = [{task:"Get Milk", isComplete: false, createdDate: "2024-02-17"}, 
-    {task:"Get Fruits", isComplete: true, createdDate: "2024-02-8"},
-    {task:"Get Eggs", isComplete: true, createdDate: "2024-02-10"}]
-
-
-    let todo ={
-        task: "",
-        isComplete: "false",
-        createdDate: new Date(),
-    };
+    let todos = [];
+    let task = "";
+ 
 
     //let count = $state(0);
 
 
     const addTask = () =>{
-        todos = [...todos,todo];
+        let todo ={
+        task: task,
+        isComplete: false,
+        createdDate: new Date(),
+    };
+        todos = [todo, ...todos];
+        task ="";
     }
 
-    $: console.table(todo);
+
+    const markTodoAsComplete = (index) =>{
+       // console.log({index});
+        todos[index].isComplete = !todos[index].isComplete;
+
+    }
+
+    const deleteTodo = (index) =>{
+        let deleteItem = todos[index];
+        console.log(deleteItem);
+        todos= todos.filter((item)=>item != deleteItem);
+    }
+
+    $: console.table(todos);
 
 </script>
 
-<input type= "text" placeholder="Add a task" bind:value={todo.task}/>
+
+
+<input type= "text" placeholder="Add a task" bind:value={task}/>
 <button on:click={addTask}>AddItem</button>
 <ol>
-    {#each todos as todo}
+    {#each todos as todo, index}
     <li class:complete={todo.isComplete}>
-        {todo.task}
+        <span>
+            {todo.task}
+        </span>
+        <span>
+            <button on:click={()=> markTodoAsComplete(index)}>✔</button>
+            <button on:click={()=> deleteTodo(index)}>✘</button>
+        </span>
     </li>
     {/each}
 </ol>
