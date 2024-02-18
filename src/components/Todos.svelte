@@ -1,59 +1,109 @@
 <script>
+    import { initializeApp, getApps, getApp } from "firebase/app";
+    import { getFirestore, collection, onSnapshot } from "firebase/firestore";
+    import { firebaseConfig } from "$lib/firebaseConfig";
+  
+    let firebaseApp;
+    let db;
+  
+    if (getApps().length === 0) {
+      firebaseApp = initializeApp(firebaseConfig);
+    } else {
+      getApp();
+    }
+  
+    // Initialize Cloud Firestore and get a reference to the service
+    db = getFirestore(firebaseApp);
+  
+    const colRef = collection(db, "todos");
     let todos = [];
+    const unsubscribe = onSnapshot(colRef, (querySnapshot) => {
+      let fbTodos = [];
+      querySnapshot.forEach((doc) => {
+        let todo = { ...doc.data(), id: doc.id };
+        fbTodos = [todo, ...fbTodos];
+      });
+      console.table(fbTodos);
+      todos = fbTodos;
+    });
+  
+    console.log(firebaseApp);
+  
+    // Array to store todo items
+    // Variable to store the task input
     let task = "";
- 
-
-    //let count = $state(0);
-
-
-    const addTask = () =>{
-        let todo ={
+    let error = "";
+  
+    // Function to add a new task to the todos array
+    const addTask = () => {
+      // Create a new todo object
+      let todo = {
         task: task,
         isComplete: false,
         createdDate: new Date(),
-    };
+      };
+      if (task.trim() !== "") {
         todos = [todo, ...todos];
-        task ="";
-    }
-
-
-    const markTodoAsComplete = (index) =>{
-       // console.log({index});
-        todos[index].isComplete = !todos[index].isComplete;
-
-    }
-
-    const deleteTodo = (index) =>{
-        let deleteItem = todos[index];
-        console.log(deleteItem);
-        todos= todos.filter((item)=>item != deleteItem);
-    }
-
-    $: console.table(todos);
-
-</script>
-
-
-
-<input type= "text" placeholder="Add a task" bind:value={task}/>
-<button on:click={addTask}>AddItem</button>
-<ol>
+        error = "";
+      } else {
+        error = "Task is Empty";
+      }
+      // Reset the task input
+      task = "";
+    };
+  
+    // Function to toggle the completion status of a todo
+    const markTodoAsComplete = (index) => {
+      // Toggle the isComplete property of the todo at the specified index
+      todos[index].isComplete = !todos[index].isComplete;
+    };
+  
+    // Function to delete a todo from the todos array
+    const deleteTodo = (index) => {
+      // Get the todo to be deleted
+      let deleteItem = todos[index];
+      // Filter out the todo to be deleted from the todos array
+      todos = todos.filter((item) => item !== deleteItem);
+    };
+  
+    const keyIsPressed = (event) => {
+      if (event.key === "Enter") {
+        addTask();
+      }
+    };
+  </script>
+  
+  
+  <!-- Input field to add a new task -->
+  <input type="text" placeholder="Add a task" bind:value={task} on:keypress={keyIsPressed} />
+  <!-- Button to trigger the addTask function -->
+  <button on:click={addTask}>Add Item</button>
+  <!-- Display the list of todos -->
+  <ol>
     {#each todos as todo, index}
     <li class:complete={todo.isComplete}>
-        <span>
-            {todo.task}
-        </span>
-        <span>
-            <button on:click={()=> markTodoAsComplete(index)}>✔</button>
-            <button on:click={()=> deleteTodo(index)}>✘</button>
-        </span>
+      <!-- Display the task text -->
+      <span>{todo.task}</span>
+      <!-- Buttons to mark the todo as complete or delete it -->
+      <span>
+        <button on:click={() => markTodoAsComplete(index)}>✔</button>
+        <button on:click={() => deleteTodo(index)}>✘</button>
+      </span>
     </li>
+    {:else}
+    <!-- Display a message if there are no todos -->
+    <p>No Todos Found</p>
     {/each}
-</ol>
-
-
-<style>
-    .complete{
-        text-decoration: line-through;
+    <p class="error">{error}</p>
+  </ol>
+  
+  <style>
+    /* Style to apply line-through text decoration for completed todos */
+    .complete {
+      text-decoration: line-through;
     }
-</style>
+    .error {
+      color: red;
+    }
+  </style>
+  
